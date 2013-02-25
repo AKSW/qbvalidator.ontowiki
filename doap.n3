@@ -1,0 +1,72 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owconfig: <http://ns.ontowiki.net/SysOnt/ExtensionConfig/> .
+@prefix extension: <http://ns.ontowiki.net/Extensions/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix event: <http://ns.ontowiki.net/SysOnt/Events/> .
+@prefix : <https://github.com/AKSW/qbvalidator.ontowiki/raw/master/doap.n3#> .
+
+<> foaf:primaryTopic :qbvalidator .
+:qbvalidator a doap:Project ;
+  doap:release :v0-1 ;
+  doap:description "A Quality Assurance dashboard for RDF DataCube" ;
+  doap:name "DataCube Validator" ;
+
+  owconfig:authorLabel "AKSW" ;
+  owconfig:enabled "true"^^xsd:boolean ;
+  owconfig:hasModule :Default ;
+  owconfig:privateNamespace <https://github.com/AKSW/qbvalidator.ontowiki/raw/master/doap.n3#> ;
+  owconfig:templates "templates" ;
+  owconfig:languages "lang" ;  
+  owconfig:defaultAction "analyze" ;
+
+:context "production"^^xsd:string ;
+  rdfs:label "DataCube Validator" .
+
+:v0-1 a doap:Version ;
+  doap:revision "0.1" .
+
+:qbvalidator owconfig:config [
+	  rdfs:comment "available uri pattern elements";
+      a owconfig:Config;
+      owconfig:id "urielement";
+      :placeholder (
+		"MD5"
+		"MODEL"
+		"COUNTER"
+      ) ;
+]
+
+:qbvalidator owconfig:config [
+	  rdfs:comment "default uri patterns for element creation";
+      a owconfig:Config;
+      owconfig:id "uripattern";
+      :ComponentSpecification "<MODEL>/CS_<MD5>" ;
+      :DataStructureDefinition "<MODEL>/DSD_<MD5>" ;
+      :DataSet "<MODEL>/DS_<MD5>" ;
+]
+
+:qbvalidator owconfig:config [
+	  rdfs:comment "special entities";
+      a owconfig:Config;
+      owconfig:id "uris";
+      :qb  <http://purl.org/linked-data/cube#>;
+      :rdfType <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>;
+      :rdfsLabel <http://www.w3.org/2000/01/rdf-schema#label>;
+      :DataStructureDefinition "DataStructureDefinition" ;
+      :ComponentSpecification "ComponentSpecification" ;
+      :ComponentProperty "ComponentProperty" ;
+      :DimensionProperty "DimensionProperty" ;
+      :MeasureProperty "MeasureProperty" ;
+      :AttributeProperty "AttributeProperty" ;
+      :DataSet "DataSet" ;
+      :Observation "Observation" ;
+      :component "component" ;
+      :measure "measure" ;
+      :dimension "dimension" ;
+      :attribute "attribute" ;
+      :order "order" ;
+      :datasetrel "dataSet" ;
+      :structure "structure" 
+]

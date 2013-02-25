@@ -1,0 +1,150 @@
+<?php
+/**
+ * This file is part of the {@link http://ontowiki.net OntoWiki} project.
+ *
+ * @copyright Copyright (c) 2011, {@link http://aksw.org AKSW}
+ * @license http://opensource.org/licenses/gpl-license.php GNU General Public License (GPL)
+ * @package Extensions
+ */
+?>
+<script type="text/javascript" src="<?php echo $this->basePath; ?>javascript/structureFunctions.js"></script>
+<script type="text/javascript" src="<?php echo $this->basePath; ?>javascript/validatingFunctions.js"></script>
+
+<div id="dataAnalysis" class="window windowbuttonscount-right-1 <?php if($this->analysis['rule']['completeStructure']): echo 'is-minimized'; endif;?>">
+    <h1 class="title"><?php echo $this->_('title data analysis'); ?></h1>
+    <div class="slidehelper">
+        <div class="content">
+            <?php if(isset($this->analysis)): ?>
+            <table border="0">
+                <tr>
+                    <th><center><?php echo $this->_('title data structures'); ?></center></th>
+                    <th><center><?php echo $this->_('title data sets'); ?></center></th>
+                    <th><center><?php echo $this->_('title component specifications'); ?></center></th>
+                    <th><center><?php echo $this->_('title unused dimensions'); ?></center></th>
+                    <th><center><?php echo $this->_('title unused measures'); ?></center></th>
+                    <th><center><?php echo $this->_('title unused attributes'); ?></center></th>
+                    <th><center><?php echo $this->_('title unbound observations'); ?></center></th>
+                </tr>
+                <tr>
+                    <td><p align="center" <?php if($this->analysis['counts']['dsd']==0): echo 'style="color:#C44;"'; endif; ?>><?php echo $this->analysis['counts']['dsd']; ?></p></td>
+                    <td><p align="center" <?php if($this->analysis['counts']['ds']==0): echo 'style="color:#C44;"'; endif; ?>><?php echo $this->analysis['counts']['ds']; ?></p></td>
+                    <td><p align="center" <?php if($this->analysis['counts']['cs']==0): echo 'style="color:#C44;"'; endif; ?>><?php echo $this->analysis['counts']['cs']; ?></p></td>
+                    <td><p align="center" <?php if($this->analysis['counts']['dp']>0): echo 'style="color:#F93;"'; endif; ?>><?php echo $this->analysis['counts']['dp']; ?></p></td>
+                    <td><p align="center" <?php if($this->analysis['counts']['mp']>0): echo 'style="color:#F93;"'; endif; ?>><?php echo $this->analysis['counts']['mp']; ?></p></td>
+                    <td><p align="center"><?php echo $this->analysis['counts']['ap']; ?></p></td>
+                    <td><p align="center" <?php if($this->analysis['counts']['obs']>0): echo 'style="color:#F93;"'; endif; ?>><?php echo $this->analysis['counts']['obs']; ?></p></td>
+                </tr>
+            </table>
+            <?php if($this->analysis['rule']['completeStructure']):
+                    echo '<i>'.$this->_('info structure given').'</i>';
+                  elseif($this->analysis['rule']['noProcessing']):
+                    echo '<i>'.$this->_('info no processing').'</i>';
+                else: ?>
+            <form name="genericElementsCreationForm" method="POST" action="<?php echo $this->submitUri; ?>" onsubmit="return validateGenericElementsCreationForm();">
+                <?php if(isset($_POST['isUriPatternSet'])):
+                    echo '<input type="hidden" name="isUriPatternSet" value="true" />';
+                    foreach($this->uriPattern as $spec => $pattern):
+                        echo '<input type="hidden" name="'.$spec.'" value="'.$pattern.'" />';
+                    endforeach;
+                endif;
+                ?>
+                <input type="hidden" value="true" name="isCreateElementsSet" />
+                <input type="submit" <?php ($this->isCreationAllowed ? '' : 'disabled'); ?> style="background:#fefefe;float:right;padding-left:1em;padding-right:1em;margin-right:10px;margin-left:10px;" value="<?php echo $this->_('button create elements') ?>" />
+                <a style="float:right;margin-top:5px;margin-right:10px;" href="javascript:toggleCreationList('<?php echo $this->structureUri; ?>', 'elementsCreation');">+ <?php echo $this->_('link detailed creation list'); ?></a>
+                <a style="float:right;margin-top:5px;margin-right:10px;" href="javascript:var result = $('#uriPattern').toggle();">+ <?php echo $this->_('link detailed uri patterns') ?></a>
+                <br />
+                <div id="elementsCreation" style="display:none;margin:10px;overflow:auto;">
+                    <div id="elementsCreationList" style="border:1px solid grey;overflow:auto;max-height:30em"></div>
+                </div>
+            </form>
+            <form name="uriPatternForm" method="POST" action="<?php echo $this->submitUri; ?>" onsubmit="return validateUriPatternForm();">
+                <div id="uriPattern" style="display:none;margin:10px;overflow:auto;">
+                    <input type="hidden" name="isUriPatternSet" value="true" />
+                    <div id="uriPatternList" style="border:1px solid grey;overflow:auto;height:12em">
+                        <ol class="bullets-none separated">
+                            <?php
+                            $i=0;
+                            foreach($this->uriPattern as $spec => $pattern):
+                                echo '<li class="'.($i % 2 == 0 ? 'even' : 'odd').'"><table border="0"><tr><td>'.$this->_('text pattern '.$spec).'&nbsp;:&nbsp;<input name="'.$spec.'" value="'.$pattern.'"/></td></tr></table></li>';
+                                $i++;
+                            endforeach;
+                            ?>
+                        </ol>
+                    </div>
+                    <input type="submit" style="background:#fefefe;float:right;padding-left:1em;padding-right:1em;" value="<?php echo $this->_('button set uri patterns') ?>" />
+                    <?php
+                    $uriElementString = $this->_('text pattern description').': ';
+                    foreach($this->uriElements as $element => $description):
+                        $uriElementString .= '<abbr title="'.$this->_('text pattern description '.$element).'">&lt;'.$element.'&gt;</abbr>&nbsp;&nbsp;';
+                    endforeach;
+                    echo '<p style="margin-top:5px;margin-left:2px;float:left;">'.$uriElementString.'</p>';
+                    ?>
+                </div>
+            </form>
+            <?php endif;
+           endif;?>
+        </div>
+    </div>
+    <div class="window-buttons">
+        <div class="window-buttons-right">
+            <span class="button <?php if($this->analysis['rule']['completeStructure']): echo 'button-windowrestore'; else: echo 'button-windowminimize'; endif; ?>"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Script section for the preparation and initial data of the JS stuff -->
+<script type="text/javascript">
+selectedElementsList = new Array();
+elementCreationList = new Array();
+uriPatternList = new Array();
+elementCountList = new Array();
+optionList = new Array();
+messageList = new Array();
+<?php
+if(isset($_POST['dim'])):
+    foreach($_POST['dim'] as $dimension):
+        $dimensionUriHash = md5($dimension);
+        echo 'dim'.$dimensionUriHash.'elemList = new Array();';
+        if(isset($_POST['dim'.$dimensionUriHash.'elemList'])):
+            foreach($_POST['dim'.$dimensionUriHash.'elemList'] as $dimElement):
+                echo 'dim'.$dimensionUriHash.'elemList.push("'.$dimElement.'");';
+            endforeach;
+            //initial load of the selected elements to ensure that the form which is
+            //loaded will be sent again
+            echo 'getComponentElements(\''.$this->filterUri.'\',\''.$_POST['ds'].'\', \''.$this->dim[$dimension]['type'].'\', \''.md5($dimension).'\');';
+        endif;
+        //set all selected elements and the dimension counts
+        echo 'selectedElementsList["dim'.$dimensionUriHash.'elemList"] = dim'.$dimensionUriHash.'elemList;';
+        echo 'elementCountList["dim'.$dimensionUriHash.'"] = '.$this->dim[$dimension]['elemCount'].';';
+    endforeach;
+endif;
+//set all uri patterns
+foreach($this->uriPattern as $spec => $pattern):
+    echo 'uriPatternList["'.$spec.'"] = "'.$pattern.'";';
+endforeach;
+//set all options
+foreach($this->options as $key => $value):
+    echo 'optionList["'.$key.'"] = "'.$value.'";';
+endforeach;
+//load the message texts for the JS part in the correct language
+//all fixed values (paginationLimit...) will be inserted here
+//all variable values from forms will be inserted with JS replace() in the respective function
+echo 'messageList["text loading"] = "'.$this->_('text loading').'";';
+echo 'messageList["text component for dimension"] = "'.$this->_('text component for dimension').'";';
+echo 'messageList["text uri"] = "'.$this->_('text uri').'";';
+echo 'messageList["text name"] = "'.$this->_('text name').'";';
+echo 'messageList["text component for measure"] = "'.$this->_('text component for measure').'";';
+echo 'messageList["text dataset"] = "'.$this->_('text dataset').'";';
+echo 'messageList["text datastructure"] = "'.$this->_('text datastructure').'";';
+echo 'messageList["text with"] = "'.$this->_('text with').'";';
+echo 'messageList["text using components"] = "'.$this->_('text using components').'";';
+echo 'messageList["alert pagination limit"] = "'.sprintf($this->_('alert pagination limit'), $this->options['paginationLimit']).'";';
+echo 'messageList["alert offset limit"] = "'.$this->_('alert offset limit').'";';
+echo 'messageList["alert empty pattern values"] = "'.$this->_('alert empty pattern values').'";';
+echo 'messageList["alert missing generic name"] = "'.$this->_('alert missing generic name').'";';
+echo 'messageList["alert missing uri"] = "'.$this->_('alert missing uri').'";';
+echo 'messageList["alert missing name"] = "'.$this->_('alert missing name').'";';
+echo 'messageList["alert doubled uri"] = "'.$this->_('alert doubled uri').'";';
+echo 'messageList["alert doubled name"] = "'.$this->_('alert doubled name').'";';
+?>
+</script>
