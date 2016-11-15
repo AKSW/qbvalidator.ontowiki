@@ -8,16 +8,6 @@
  */
 
 /**
- * The file providing the title helper class for elements of a knowledge base
- */
-require_once 'OntoWiki/Model/TitleHelper.php';
-
-/**
- * The file providing the simple sparql query class
- */
-require_once 'Erfurt/Sparql/SimpleQuery.php';
-
-/**
  * Helper class for the RDF DataCube vocabulary and models based on it. This class
  * provides functions to analyze, complete and query data cubes.
  *
@@ -29,20 +19,20 @@ require_once 'Erfurt/Sparql/SimpleQuery.php';
  * @author Tom-Michael Hesse <tommichael.hesse@googlemail.com>
  */
 class CubeHelper {
-    
+
     /**
      * Holds the uris to the RDF DataCube vocabulary elements
-     * @var array The uris for the RDF DataCube vocabulary: 
-     * 'elementName' => 'elementUri' 
+     * @var array The uris for the RDF DataCube vocabulary:
+     * 'elementName' => 'elementUri'
      */
     private $_uris = array();
-    
+
     /**
      * Holds the patterns for the uris of new instances
-     * @var array The uri patterns for new elements uris: 'pattern' => 'content' 
+     * @var array The uri patterns for new elements uris: 'pattern' => 'content'
      */
     private $_uriPattern = array();
-    
+
     /**
      * Holds the uri elements which are enabled for the use in patterns to create
      * the uris for new instances in the knowledge base
@@ -50,33 +40,33 @@ class CubeHelper {
      * 'uriElementName' => boolean
      */
     private $_uriElements = array();
-    
+
     /**
      * Holds the number of new instances to be created using the uri pattern
      * '<COUNTER>'
      * @var int The counter for the number of new instances
      */
     private $_uriCounter = 0;
-    
+
     /**
      * Holds the knowledge base to work with
-     * @var Erfurt_Rdf_Model The current knowledge base 
+     * @var Erfurt_Rdf_Model The current knowledge base
      */
     private $_model = null;
-    
+
     /**
      * Holds the uri of the current knowledge base
-     * @var string The uri string of the current knowledge base 
+     * @var string The uri string of the current knowledge base
      */
     private $_modelUri = "";
-    
+
     /**
      * Holds the uri of the current knowledge base without an ending slash
      * @var string The uri string of the current knowledge base without the
      * ending slash
      */
     private $_modelUriCutted = "";
-    
+
     /**
      * Initializes the cube helper: Sets all DataCube vocabulary uris, patterns,
      * uri elements and the model for the cube helper object to work with.
@@ -86,25 +76,25 @@ class CubeHelper {
      * @param array $urielements The uri elements which are enabled for uri patterns
      */
     public function __construct($uris, $model, $uripattern, $urielements) {
-        
-        //set all needed information about the cube model, his uris, 
+
+        //set all needed information about the cube model, his uris,
         //the patterns and their elements
-        $this->_uris = $uris; 
-        
+        $this->_uris = $uris;
+
         $this->_uriPattern = $uripattern;
-        
+
         $this->_uriElements = $urielements;
-        
+
         $this->_model = $model;
-        
+
         $this->_modelUri = (string) $this->_model;
-        
+
         //check, if the model uri ends with a slash and cut it
-        $this->_modelUriCutted = (strrpos($this->_modelUri, '/', -1) === false ? 
+        $this->_modelUriCutted = (strrpos($this->_modelUri, '/', -1) === false ?
             $this->_modelUri :
             substr($this->_modelUri, 0, strlen($this->_modelUri)-1));
     }
-    
+
     /**
      * Evaluates the given knowledge base for data cube structures: Returns an
      * array with detailed counts of data cube elements specified in the given
@@ -117,19 +107,19 @@ class CubeHelper {
      * dimension properties, measure properties, attribute properties, observations
      * 'counts' => { 'dsd' => int, 'ds' => int, 'cs' => int, 'dp' => int, 'mp' =>
      * int, 'ap' => int, 'obs' => int }
-     * Instances of unbound dp, mp, ap, obs and proposals for their new uris 
+     * Instances of unbound dp, mp, ap, obs and proposals for their new uris
      * of component specifications
      * 'dp' => { ... => { 'uri' => string, 'name' => string, 'csuri' => string} }
      * 'mp' => { ... => { 'uri' => string, 'name' => string, 'csuri' => string} }
      * 'ap' => { ... => { 'uri' => string, 'name' => string } }
-     * 'obs' => { ... => { 'uri' => string} } 
+     * 'obs' => { ... => { 'uri' => string} }
      * Rules representing conditions for evaluating the given structure and their
      * result
      * 'rule' => { 'structureCounts' => boolean, 'propertyCounts' => boolean,
      * 'observationsCount' => boolean, 'completeStructure' => boolean }
      */
     public function analyzeModel() {
-        
+
         //prepare the analyzing queries to the model
         $titleHelper = new OntoWiki_Model_TitleHelper($this->_model);
         $queryAnalyzeCounts = new Erfurt_Sparql_SimpleQuery();
@@ -144,12 +134,12 @@ class CubeHelper {
         $queryMeasureComponentsResult = null;
         $queryComponentPropertiesResult = array();
         $queryObservationsResult = null;
-        
+
         $result = array();
-        
-        //analyze the counts of linked DataStructures (dsd), DataSets (ds) and 
+
+        //analyze the counts of linked DataStructures (dsd), DataSets (ds) and
         //ComponentSpecifications (cs)
-        $queryAnalyzeCounts->setProloguePart('SELECT COUNT(DISTINCT(?dsd)) AS 
+        $queryAnalyzeCounts->setProloguePart('SELECT COUNT(DISTINCT(?dsd)) AS
             ?dsdCount COUNT(DISTINCT(?ds)) AS ?dsCount COUNT(DISTINCT(?cs)) AS ?csCount');
         $queryAnalyzeCounts->setWherePart('WHERE {
             ?dsd <'.$this->_uris['rdfType'].'> <'.$this->_uris['DataStructureDefinition'].'>.
@@ -157,15 +147,15 @@ class CubeHelper {
             ?cs <'.$this->_uris['rdfType'].'> <'.$this->_uris['ComponentSpecification'].'>.
             OPTIONAL {
             ?ds2 <'.$this->_uris['structure'].'> ?dsd2.
-            ?dsd3 <'.$this->_uris['component'].'> ?cs2. 
+            ?dsd3 <'.$this->_uris['component'].'> ?cs2.
             FILTER ((?ds2 = ?ds) AND (?cs2 = ?cs))}
             FILTER (BOUND(?dsd2) AND BOUND(?dsd3) AND (?dsd2 = ?dsd3))}');
-        
+
         $queryAllObservationsCount->setProloguePart('SELECT COUNT(DISTINCT(?obs))
             AS ?obsCount');
         $queryAllObservationsCount->setWherePart('WHERE {
             ?obs <'.$this->_uris['rdfType'].'> <'.$this->_uris['Observation'].'>}');
-        
+
         //analyze whether at least one bound dimension component
         $queryAnalyzeDimensionComponents->setProloguePart('SELECT COUNT(?dp) AS ?csdpcount');
         $queryAnalyzeDimensionComponents->setWherePart('WHERE {
@@ -176,7 +166,7 @@ class CubeHelper {
             FILTER (?cs2 = ?cs)
             }
             FILTER (BOUND(?dsd))}');
-        
+
         //analyze whether at least one bound measure component is given
         $queryAnalyzeMeasureComponents->setProloguePart('SELECT COUNT(?mp) AS ?csmpcount');
         $queryAnalyzeMeasureComponents->setWherePart('WHERE {
@@ -187,8 +177,8 @@ class CubeHelper {
             FILTER (?cs2 = ?cs)
             }
             FILTER (BOUND(?dsd))}');
-        
-        //analyze if there are "unbound" ComponentProperties: Dimension (dp), 
+
+        //analyze if there are "unbound" ComponentProperties: Dimension (dp),
         //Measure (mp), Attribute (ap)
         $queryAnalyzeComponentProperties[0] = new Erfurt_Sparql_SimpleQuery();
         $queryAnalyzeComponentProperties[0]->setProloguePart('SELECT DISTINCT(?dp)');
@@ -208,20 +198,20 @@ class CubeHelper {
                 .$this->_uris['rdfType'].'> <'.$this->_uris['AttributeProperty'].'>.
             OPTIONAL {?cs <'.$this->_uris['attribute'].'> ?ap2. FILTER (?ap = ?ap2)}
             FILTER (!BOUND(?ap2))}');
-        
+
         //analyze if there are "unbound" Observations in the given model
         $queryAnalyzeObservations->setProloguePart('SELECT DISTINCT(?obs)');
         $queryAnalyzeObservations->setWherePart('WHERE {?obs <'.
                 $this->_uris['rdfType'].'> <'.$this->_uris['Observation'].'>.
             OPTIONAL {?obs2 <'.$this->_uris['datasetrel'].'> ?ds. FILTER (?obs = ?obs2)}
             FILTER (!BOUND(?obs2))}');
-        
+
         //run the queries and save the result
-        #var_dump((string) $queryAnalyzeCounts);die;      
+        #var_dump((string) $queryAnalyzeCounts);die;
         $queryCountsResult = $this->_model->sparqlQuery($queryAnalyzeCounts);
-        $queryAllObservationsCountResult 
+        $queryAllObservationsCountResult
             = $this->_model->sparqlQuery($queryAllObservationsCount);
-        $queryDimensionComponentsResult 
+        $queryDimensionComponentsResult
             = $this->_model->sparqlQuery($queryAnalyzeDimensionComponents);
         $queryMeasureComponentsResult
             = $this->_model->sparqlQuery($queryAnalyzeMeasureComponents);
@@ -229,21 +219,21 @@ class CubeHelper {
             $queryComponentPropertiesResult[] = $this->_model->sparqlQuery($query);
         }
         $queryObservationsResult = $this->_model->sparqlQuery($queryAnalyzeObservations);
-        
+
         //evaluate the counts of the cube parts
         foreach($queryCountsResult as $resultRow) {
-            if(isset($resultRow['dsdCount'])) 
+            if(isset($resultRow['dsdCount']))
                 $result['counts']['dsd'] = (int) $resultRow['dsdCount'];
-            if(isset($resultRow['dsCount'])) 
+            if(isset($resultRow['dsCount']))
                 $result['counts']['ds'] = (int) $resultRow['dsCount'];
-            if(isset($resultRow['csCount'])) 
+            if(isset($resultRow['csCount']))
                 $result['counts']['cs'] = (int) $resultRow['csCount'];
         }
-        
+
         $resultRow = current($queryAllObservationsCountResult);
         if(isset($resultRow['obsCount']))
             $result['counts']['allobs'] = (int) $resultRow['obsCount'];
-        
+
         //evaluate the bound components
         $resultRow = current($queryDimensionComponentsResult);
         if(isset($resultRow['csdpcount']))
@@ -251,7 +241,7 @@ class CubeHelper {
         $resultRow = current($queryMeasureComponentsResult);
         if(isset($resultRow['csmpcount']))
             $result['counts']['csmp'] = (int) $resultRow['csmpcount'];
-        
+
         //evaluate the "unbound" properties in the model
         foreach($queryComponentPropertiesResult as $queryResult) {
             foreach($queryResult as $resultRow) {
@@ -269,23 +259,23 @@ class CubeHelper {
                 }
             }
         }
-        $result['counts']['dp'] = count($result['dp']);
-        $result['counts']['mp'] = count($result['mp']);
-        $result['counts']['ap'] = count($result['ap']);
-        
+        $result['counts']['dp'] = isset($result['dp']) ? count($result['dp']) : 0;
+        $result['counts']['mp'] = isset($result['mp']) ? count($result['mp']) : 0;
+        $result['counts']['ap'] = isset($result['ap']) ? count($result['ap']) : 0;
+
         //evaluate the "unbound" observations in the model
         foreach($queryObservationsResult as $resultRow) {
             if(isset($resultRow['obs'])) {
                 $result['obs'][]['uri'] = $resultRow['obs'];
             }
         }
-        $result['counts']['obs'] = count($result['obs']);
-        
+        $result['counts']['obs'] = isset($result['obs']) ? count($result['obs']) : 0;
+
         //add all titles; the title is not needed for the observations
         //add all uris for the components to be created
-        $dp = $result['dp'];
-        $mp = $result['mp'];
-        $ap = $result['ap'];
+        $dp = isset($result['dp']) ? $result['dp'] : array();
+        $mp = isset($result['mp']) ? $result['mp'] : array();
+        $ap = isset($result['ap']) ? $result['ap'] : array();
         foreach($dp as $index => $dpset) {
             $result['dp'][$index]['name'] = $titleHelper->getTitle($dpset['uri']);
             $result['dp'][$index]['csuri'] = $this->_createURI($dpset['uri'], 'dp');
@@ -297,13 +287,13 @@ class CubeHelper {
         foreach($ap as $index => $apset) {
             $result['ap'][$index]['name'] = $titleHelper->getTitle($apset['uri']);
         }
-        
+
         //RULE 1: if no elements are given at all no further processing can be done
         if($result['counts']['dsd'] == 0 && $result['counts']['ds'] == 0
                 && $result['counts']['cs'] == 0 && $result['counts']['allobs'] == 0)
             $result['rule']['noProcessing'] = true;
         else $result['rule']['noProcessing'] = false;
-        
+
         //RULE 2: if no structure elements for the unbound dimension and component
         //properties and the unbound observations are given, create them
         if($result['counts']['dsd'] == 0 && $result['counts']['ds'] == 0
@@ -311,14 +301,14 @@ class CubeHelper {
                 && $result['counts']['dp'] > 0 && $result['counts']['mp'] > 0)
             $result['rule']['completionNeeded'] = true;
         else $result['rule']['completionNeeded'] = false;
-        
-        //RULE 3: if all element counts are greater than 0 some structure 
+
+        //RULE 3: if all element counts are greater than 0 some structure
         //of the cube is given
-        if($result['counts']['dsd'] > 0 && $result['counts']['ds'] > 0 
+        if($result['counts']['dsd'] > 0 && $result['counts']['ds'] > 0
                 && $result['counts']['csdp'] > 0 && $result['counts']['csmp'] > 0)
             $result['rule']['structureGiven'] = true;
-        else $result['rule']['structureGiven'] = false;       
-        
+        else $result['rule']['structureGiven'] = false;
+
         //RULE 4: the structure is complete if there are no unbound elements
         //and a structure is given
         if($result['rule']['structureGiven'] && $result['counts']['dp'] == 0
@@ -326,10 +316,10 @@ class CubeHelper {
                 && $result['counts']['obs'] == 0)
             $result['rule']['completeStructure'] = true;
         else $result['rule']['completeStructure'] = false;
-        
+
         return $result;
     }
-    
+
     /**
      * Evaluates the observations in the given model for a data set partition:
      * This function returns a set of data sets grouped by the used components
@@ -340,15 +330,15 @@ class CubeHelper {
      * Contains for each new data set instance the uri and name proposal as well
      * as the corresponding new instance of a data structure definition
      * 'ds' => { ... => { 'dsuri' => string, 'dsname' => string, 'dsduri' =>
-     * string, 'dsdname' => string} } 
+     * string, 'dsdname' => string} }
      * Contains the total amount of new data set instances
      * 'count' => { 'ds' => int }
      */
     public function analyzeNeededObservationPartition() {
-            
+
         $result = array();
 
-        //find out whats the maximum number of linked dimension and measure 
+        //find out whats the maximum number of linked dimension and measure
         //properties in the observations
         //this is needed to avoid an oversized observation analysis query
         $queryMaxDimensionCount = new Erfurt_Sparql_SimpleQuery();
@@ -373,7 +363,7 @@ class CubeHelper {
 
         $queryResultMaxDimension = $this->_model->sparqlQuery($queryMaxDimensionCount);
         $queryResultMaxMeasure = $this->_model->sparqlQuery($queryMaxMeasureCount);
-        
+
         foreach($queryResultMaxDimension as $value) {
             if(isset($value['dpC']))
                 $result['partition']['dp'][] = $value['dpC'];
@@ -383,11 +373,11 @@ class CubeHelper {
                 $result['partition']['mp'][] = $value['mpC'];
         }
 
-        //iterate through all combinations of dimension and measure usage 
+        //iterate through all combinations of dimension and measure usage
         //in the unbound observations
-        foreach($result['partition']['dp'] as $countDp) {        
+        foreach($result['partition']['dp'] as $countDp) {
             foreach($result['partition']['mp'] as $countMp) {
-                //select all observations with unbound dimension and measure 
+                //select all observations with unbound dimension and measure
                 //properties
                 $queryProloguePart = 'SELECT COUNT(?obs) AS ?obsC';
                 $queryWherePart = 'WHERE {?obs <'.$this->_uris['rdfType'].
@@ -427,7 +417,7 @@ class CubeHelper {
                 //add filters to avoid doubled dimensions
                 for($i = 0; $i < $countDp; $i++) {
                     for($j = $i+1; $j < $countDp; $j++) {
-                        $queryWherePart .= 
+                        $queryWherePart .=
                             ' FILTER ('.$names['dp'][$i].' != '.$names['dp'][$j].')';
                     }
                 }
@@ -435,7 +425,7 @@ class CubeHelper {
                 //add filters to avoid doubled measures
                 for($i = 0; $i < $countMp; $i++) {
                     for($j = $i+1; $j < $countMp; $j++) {
-                        $queryWherePart .= 
+                        $queryWherePart .=
                             ' FILTER ('.$names['mp'][$i].' != '.$names['mp'][$j].')';
                     }
                 }
@@ -488,26 +478,26 @@ class CubeHelper {
         $result['counts']['ds'] = count($result['ds']);
         return $result;
     }
-    
+
     /**
      * Returns the complete analysis data which is needed to create new elements
-     * in the cube: The method runs analyzeModel() and 
+     * in the cube: The method runs analyzeModel() and
      * analyzeNeededObservationPartition().
      * @return array The merged data of the analysis and partition results
      */
     public function getCreationAnalysis() {
-        
+
         $analysis = array();
         $partition = array();
-        
+
         $analysis = $this->analyzeModel();
         $partition = $this->analyzeNeededObservationPartition();
-        
+
         $result = array_merge($analysis, $partition);
-        
+
         return $result;
     }
-    
+
     /**
      * Creates the new instances for the cube structure: This method creates new
      * instances of RDF DataCube elements to complete the cube structure of the
@@ -516,95 +506,95 @@ class CubeHelper {
      * the merged results of analyzeModel() and analyzeNeededObservationPartition().
      */
     public function createStructureElements($creationTable = null) {
-       
+
         if(isset($creationTable)) {
-            
+
             $modelUri = $this->_modelUri;
-            
+
             $resourceList = array();
-            
+
             //step 1: create the component specifications
             foreach($creationTable['dp'] as $dp => $dpset) {
                 $resourceList['cs']['dp'][$dpset['uri']] = $creationTable['dp'][$dp]['csuri'];
                 //add the type of the component specification
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['rdfType'], 
-                        array('value' => $this->_uris['ComponentSpecification'], 'type' => 'uri'), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['rdfType'],
+                        array('value' => $this->_uris['ComponentSpecification'], 'type' => 'uri'),
                         true);
                 //add the dimension property relation
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['dimension'], 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['dimension'],
                         array('value' => $dpset['uri'], 'type' => 'uri'), true);
                 //add the name of the component specification
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['rdfsLabel'], 
-                        array('value' => $creationTable['dp'][$dp]['name'], 'type' => ''), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['dp'][$dpset['uri']], $this->_uris['rdfsLabel'],
+                        array('value' => $creationTable['dp'][$dp]['name'], 'type' => ''),
                         true);
             }
-            
+
             foreach($creationTable['mp'] as $mp => $mpset) {
                 $resourceList['cs']['mp'][$mpset['uri']] = $creationTable['mp'][$mp]['csuri'];
                 //add the type of the component specification
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['rdfType'], 
-                        array('value' => $this->_uris['ComponentSpecification'], 'type' => 'uri'), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['rdfType'],
+                        array('value' => $this->_uris['ComponentSpecification'], 'type' => 'uri'),
                         true);
                 //add the measure property relation
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['measure'], 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['measure'],
                         array('value' => $mpset['uri'], 'type' => 'uri'), true);
-                //add the name of the component specification  
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['rdfsLabel'], 
-                        array('value' => $creationTable['mp'][$mp]['name'], 'type' => ''), 
+                //add the name of the component specification
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['cs']['mp'][$mpset['uri']], $this->_uris['rdfsLabel'],
+                        array('value' => $creationTable['mp'][$mp]['name'], 'type' => ''),
                         true);
             }
-            
+
             //step 2: create the data structures and data sets
             foreach($creationTable['ds'] as $index => $element) {
-                
+
                 $resourceList['dsd'][$index] = $element['dsduri'];
                 $resourceList['ds'][$index] = $element['dsuri'];
-                
+
                 //create the data structure
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['dsd'][$index], $this->_uris['rdfType'], 
-                        array('value' => $this->_uris['DataStructureDefinition'], 'type' => 'uri'), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['dsd'][$index], $this->_uris['rdfType'],
+                        array('value' => $this->_uris['DataStructureDefinition'], 'type' => 'uri'),
                         true);
                 //set the data structure name
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['dsd'][$index], $this->_uris['rdfsLabel'], 
-                        array('value' => $creationTable['ds'][$index]['dsdname'], 'type' => ''), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['dsd'][$index], $this->_uris['rdfsLabel'],
+                        array('value' => $creationTable['ds'][$index]['dsdname'], 'type' => ''),
                         true);
                 //link all components to the structure
                 foreach($element as $key => $item) {
-                    if(($key != 'obsCount') && ($key != 'dsuri') && ($key != 'dsduri') 
+                    if(($key != 'obsCount') && ($key != 'dsuri') && ($key != 'dsduri')
                             && ($key != 'dsname') && ($key != 'dsdname')) {
                         $subKey = substr($key, 0, 2);
-                        Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                                $resourceList['dsd'][$index], $this->_uris['component'], 
-                                array('value' => $resourceList['cs'][$subKey][$item], 'type' => 'uri'), 
+                        Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                                $resourceList['dsd'][$index], $this->_uris['component'],
+                                array('value' => $resourceList['cs'][$subKey][$item], 'type' => 'uri'),
                                 true);
                     }
                 }
-                
+
                 //create the data set
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['ds'][$index], $this->_uris['rdfType'], 
-                        array('value' => $this->_uris['DataSet'], 'type' => 'uri'), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['ds'][$index], $this->_uris['rdfType'],
+                        array('value' => $this->_uris['DataSet'], 'type' => 'uri'),
                         true);
                 //set the data set name
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['ds'][$index], $this->_uris['rdfsLabel'], 
-                        array('value' => $creationTable['ds'][$index]['dsname'], 'type' => ''), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['ds'][$index], $this->_uris['rdfsLabel'],
+                        array('value' => $creationTable['ds'][$index]['dsname'], 'type' => ''),
                         true);
                 //link the data set to the data structure
-                Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                        $resourceList['ds'][$index], $this->_uris['structure'], 
-                        array('value' => $resourceList['dsd'][$index], 'type' => 'uri'), 
+                Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                        $resourceList['ds'][$index], $this->_uris['structure'],
+                        array('value' => $resourceList['dsd'][$index], 'type' => 'uri'),
                         true);
-            
-                //step 3: update all observations which are structered by this 
+
+                //step 3: update all observations which are structered by this
                 //data structure and data set
                 $queryAffectedObservations = new Erfurt_Sparql_SimpleQuery();
                 $queryAffectedObservations->setProloguePart('SELECT DISTINCT(?obs)');
@@ -612,8 +602,8 @@ class CubeHelper {
                 $i = 0;
                 //find all appropriate observations
                 foreach($element as $key => $item) {
-                    if(($key != 'obsCount') && ($key != 'dsuri') 
-                            && ($key != 'dsduri') && ($key != 'dsname') 
+                    if(($key != 'obsCount') && ($key != 'dsuri')
+                            && ($key != 'dsduri') && ($key != 'dsname')
                             && ($key != 'dsdname')) {
                        $queryWherePart .= '?obs <'.$item.'> ?itemValue'.$i.'. ';
                        $i++;
@@ -621,39 +611,39 @@ class CubeHelper {
                 }
                 $queryWherePart .= '}';
                 $queryAffectedObservations->setWherePart($queryWherePart);
-                
-                $queryResultObservations 
+
+                $queryResultObservations
                     = $this->_model->sparqlQuery($queryAffectedObservations);
                 //link all found observations to the data set
                 foreach($queryResultObservations as $resultRow) {
                     if(isset($resultRow['obs'])) {
-                        Erfurt_App::getInstance()->getStore()->addStatement($modelUri, 
-                                $resultRow['obs'], $this->_uris['datasetrel'], 
-                                array('value' => $resourceList['ds'][$index], 'type' => 'uri'), 
+                        Erfurt_App::getInstance()->getStore()->addStatement($modelUri,
+                                $resultRow['obs'], $this->_uris['datasetrel'],
+                                array('value' => $resourceList['ds'][$index], 'type' => 'uri'),
                                 true);
                     }
                 }
             }
         }
     }
-    
+
     /**
-     * Returns all existing data structure definitions in the given knowledge 
+     * Returns all existing data structure definitions in the given knowledge
      * base.
      * @param OntoWiki_Model_TitleHelper $titleHelper The title helper to add
      * the uris of the data structures for further use
      * @return array The uris of all data structures in the given knowledge base:
-     * ... => 'dataStructureUri' 
+     * ... => 'dataStructureUri'
      */
     public function getDataStructureDefinition($titleHelper = null) {
-        
+
         //get the required initializations
         $queryDSD = new Erfurt_Sparql_SimpleQuery();
         $result = array();
 
         //get all indicators in the cube by the DataStructureDefinitions
         $queryDSD->setProloguePart('SELECT ?dsd');
-        $queryDSD->setWherePart('WHERE {?dsd <'.$this->_uris['rdfType'].'> 
+        $queryDSD->setWherePart('WHERE {?dsd <'.$this->_uris['rdfType'].'>
             <'.$this->_uris['DataStructureDefinition'].'>}');
 
         $queryResultDSD = $this->_model->sparqlQuery($queryDSD);
@@ -665,10 +655,10 @@ class CubeHelper {
                 if(isset($titleHelper)) $titleHelper->addResource($dsd['dsd']);
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Returns all existing data sets in the given knowledge base for a given
      * data structure definition.
@@ -678,17 +668,17 @@ class CubeHelper {
      * the uris of the data sets for further use
      * @return array The uris of all data sets in the given knowledge base for
      * the given data structure definition:
-     * ... => 'dataSetUri' 
+     * ... => 'dataSetUri'
      */
     public function getDataSets($dataStructure, $titleHelper = null) {
-        
+
         //get the required initializations
         $queryDS = new Erfurt_Sparql_SimpleQuery();
         $result = array();
 
         //get all data sets in the cube for the given DataStructureDefinition
         $queryDS->setProloguePart('SELECT ?ds');
-        $queryDS->setWherePart('WHERE {?ds <'.$this->_uris['rdfType'].'> 
+        $queryDS->setWherePart('WHERE {?ds <'.$this->_uris['rdfType'].'>
             <'.$this->_uris['DataSet'].'>.
             ?ds <'.$this->_uris['structure'].'> <'.$dataStructure.'>.}');
 
@@ -701,10 +691,10 @@ class CubeHelper {
                 if(isset($titleHelper)) $titleHelper->addResource($ds['ds']);
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Returns all components used in data structure and their element count in
      * a specific data set.
@@ -717,17 +707,17 @@ class CubeHelper {
      * found instances shall be added
      * @return array The found components:
      * 'componentUri' => { 'uri' => string, 'type' => string, 'elemCount' => int,
-     * 'order' => int} 
+     * 'order' => int}
      */
     public function getComponents($dsdUri, $dsUri, $type, $titleHelper = null) {
-        
+
         $result = array();
-        
+
         //search for the components specified by the parameters
         $queryComp = new Erfurt_Sparql_SimpleQuery();
         $queryComp->setProloguePart('SELECT ?comp ?comptype ?order');
-        $queryComp->setWherePart('WHERE {<'.$dsdUri.'> <'.$this->_uris['component'].'> ?comp.                
-                                    ?comp <'.$this->_uris['rdfType'].'> 
+        $queryComp->setWherePart('WHERE {<'.$dsdUri.'> <'.$this->_uris['component'].'> ?comp.
+                                    ?comp <'.$this->_uris['rdfType'].'>
                                         <'.$this->_uris['ComponentSpecification'].'>.
                                     ?comp <'.$this->_uris[$type].'> ?comptype.
                                     OPTIONAL {?comp <'.$this->_uris['order'].'> ?order.}}
@@ -742,37 +732,37 @@ class CubeHelper {
                 $result[$comp['comp']]['uri'] = $comp['comp'];
                 $result[$comp['comp']]['type'] = $comp['comptype'];
                 if($type == 'dimension') {
-                    $result[$comp['comp']]['elemCount'] 
+                    $result[$comp['comp']]['elemCount']
                         = $this->getComponentElementCount($dsUri, $comp['comptype']);
                 }
-                $result[$comp['comp']]['order'] 
+                $result[$comp['comp']]['order']
                     = (isset($comp['order']) ? $comp['order'] : -1);
                 if(isset($titleHelper)) $titleHelper->addResource($comp['comp']);
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Returns an allocation of the chart x- and z-Axis evaluated by the order
-     * (higher = smaller order value = x) and element count (greater = x) 
+     * (higher = smaller order value = x) and element count (greater = x)
      * of the dimensions.
      * @param array $dimensions The dimensions to evaluate:
      * ... => 'dimensionUri'
      * @param array $dimTable The dimension table of all dimensions in the given
      * knowledge base; uses the result of getComponents()
      * @return array The allocation proposal:
-     * 'dimensionUri' => ('x' XOR 'z') 
+     * 'dimensionUri' => ('x' XOR 'z')
      */
     public function getAxisAllocation($dimensions, $dimTable) {
-        
+
         $allocation = array();
         $maximumRank = array('order' => 999, 'count' => 0, 'dimension' => '');
-        
+
         foreach($dimensions as $dimension) {
             $order = $dimTable[$dimension]['order'];
-            $count = $dimTable[$dimension]['elemCount'];                
+            $count = $dimTable[$dimension]['elemCount'];
             if(($order != -1 && $order < $maximumRank['order'])
                     || ($order == -1 && $count > $maximumRank['count'])) {
                 $maximumRank['dimension'] = $dimension;
@@ -780,17 +770,17 @@ class CubeHelper {
                 $maximumRank['count'] = $count;
             }
         }
-        
+
         foreach($dimensions as $dimension) {
-            $allocation[$dimension] 
+            $allocation[$dimension]
                 = ($maximumRank['dimension'] == $dimension ? 'x' : 'z');
             if($dimTable[$dimension]['elemCount'] == 1)
                 $allocation[$dimension] = '-';
         }
-        
+
         return $allocation;
     }
-    
+
     /**
      * Returns all observations fitting the given specification of dimensions,
      * measures, pagination limits and excluded elements.
@@ -805,172 +795,172 @@ class CubeHelper {
      * 'dimLimitList' => { 'dimensionUri' => { 'limit' => int, 'offset' => int } }
      * 'dimOptionList' => { 'dimensionUri' => { 'order' => string } }
      * 'measFunctionList' => { 'measureUri' => string }
-     * 'measOptionList' => { 'measureUri' => { 'order' => string, 'round' => boolean } }  
+     * 'measOptionList' => { 'measureUri' => { 'order' => string, 'round' => boolean } }
      * @return array All observations fitting the specification of the result:
      * 'observations' => queryResult
-     * 'nameTable' => { 
+     * 'nameTable' => {
      * 'd' => { 'dimensionUri' => { 'index' => int, 'qname' =>
      * string, 'uri' => string, 'type' => 'propertyUri', 'label' => string} },
      * 'm' => { 'measureUri' => { 'index' => int, 'qname' => string, 'uri' => string,
-     * 'type' => 'propertyUri', 'label' => string} } 
-     * } 
+     * 'type' => 'propertyUri', 'label' => string} }
+     * }
      */
     public function getResultObservations($resultCubeSpec) {
-        
+
         $internalNameTable = array();
-        
+
         $titleHelper = new OntoWiki_Model_TitleHelper($this->_model);
-        
+
         $queryProloguePart = "SELECT";
-        $queryWherePart = "WHERE { ?observation <".$this->_uris['rdfType']."> 
+        $queryWherePart = "WHERE { ?observation <".$this->_uris['rdfType'].">
             <".$this->_uris['Observation'].">.";
-        $queryWherePart .= " ?observation <".$this->_uris['datasetrel']."> 
+        $queryWherePart .= " ?observation <".$this->_uris['datasetrel'].">
             <".$resultCubeSpec['ds'].">.";
         $queryGroupByPart = "";
         $queryOrderByPart = "";
-        
+
         $queryComp = new Erfurt_Sparql_SimpleQuery();
-        
+
         //add all dimensions to the query
         foreach($resultCubeSpec['dim'] as $index => $dimension) {
-            
+
             $dimPropertyUri = $resultCubeSpec['dimtypes'][$dimension]['type'];
             $dimQName = "d".$index;
-            
+
             //only add those dimensions for which more than one element was
             //selected
             if($resultCubeSpec['dimtypes'][$dimension]['elemCount'] != 1) {
                 $queryProloguePart.= " ?".$dimQName;
                 $queryGroupByPart .= " ?".$dimQName;
-                $queryOrderByPart .= ($resultCubeSpec['dimOptionList'][$dimension]['order'] != 'NONE' ? 
+                $queryOrderByPart .= ($resultCubeSpec['dimOptionList'][$dimension]['order'] != 'NONE' ?
                     $resultCubeSpec['dimOptionList'][$dimension]['order'].
                     '(?'.$dimQName.') ' : '');
             }
-               
+
             $queryWherePart.= " ?observation <".$dimPropertyUri."> ?".$dimQName.".";
-            
+
             $titleHelper->addResource($dimension);
-            
+
             $internalNameTable['d'][$dimension]['index'] = $index;
             $internalNameTable['d'][$dimension]['qname'] = $dimQName;
             $internalNameTable['d'][$dimension]['uri'] = $dimension;
             $internalNameTable['d'][$dimension]['type'] = $dimPropertyUri;
-            
+
             //add constraints for the dimension element selection in the observations
             if(isset($resultCubeSpec['dimElemList'][$dimension])) {
-                
+
                 $dimElemList = $this->getComponentElements($resultCubeSpec['ds'], $dimPropertyUri);
                 $falseList = array_diff($dimElemList, $resultCubeSpec['dimElemList'][$dimension]);
-                
+
                 if(count($falseList)>0) {
-                
-                    //if the falselist contains less then 80 elements, use NOT 
+
+                    //if the falselist contains less then 80 elements, use NOT
                     //filter statement
                     if(count($falseList) < 80) {
-                    
+
                         $queryWherePart = substr($queryWherePart,0,strlen($queryWherePart)-1).
                                 " FILTER ( NOT(";
 
                         foreach($falseList as $element) {
                             $elementString = '<'.$element.'>';
-                            if(strpos($element, 'http://') === false) 
+                            if(strpos($element, 'http://') === false)
                                     $elementString = '"'.$element.'"';
                             $queryWherePart.= " ?".$dimQName." = ".$elementString." OR";
                         }
 
-                        $queryWherePart 
+                        $queryWherePart
                             = substr($queryWherePart, 0, strlen($queryWherePart)-3).")).";
-                                        
-                    } 
+
+                    }
                     //else use the regular filter statement
                     else {
-                        
+
                         $queryWherePart = substr($queryWherePart,0,strlen($queryWherePart)-1).
                                 " FILTER ( (";
 
                         foreach($resultCubeSpec['dimElemList'][$dimension] as $element) {
                             $elementString = '<'.$element.'>';
-                            if(strpos($element, 'http://') === false) 
+                            if(strpos($element, 'http://') === false)
                                     $elementString = '"'.$element.'"';
                             $queryWherePart.= " ?".$dimQName." = ".$elementString." OR";
                         }
 
-                        $queryWherePart 
+                        $queryWherePart
                             = substr($queryWherePart, 0, strlen($queryWherePart)-3).")).";
-                        
+
                     }
                 }
             }
-            
+
             //add element constraints if the dimension elements are paginated
             if(isset($resultCubeSpec['dimLimitList'][$dimension])) {
-                
-                $dimElemList = $this->getComponentElements($resultCubeSpec['ds'], 
+
+                $dimElemList = $this->getComponentElements($resultCubeSpec['ds'],
                         $dimPropertyUri, null, $resultCubeSpec['dimLimitList'][$dimension]);
-                
+
                 $queryWherePart = substr($queryWherePart,0,strlen($queryWherePart)-1).
                         " FILTER (";
-                
+
                 foreach($dimElemList as $element) {
                     $elementString = '<'.$element.'>';
-                    if(strpos($element, 'http://') === false) 
+                    if(strpos($element, 'http://') === false)
                             $elementString = '"'.$element.'"';
                     $queryWherePart.= " ?".$dimQName." = ".$elementString." OR";
                 }
-                
+
                 $queryWherePart = substr($queryWherePart, 0, strlen($queryWherePart)-3).").";
             }
         }
-        
+
         //add all measures to the query
         foreach($resultCubeSpec['ms'] as $index => $measure) {
-            
+
             $measPropertyUri = $resultCubeSpec['mstypes'][$measure]['type'];
             $measQName = "m".$index;
-            
+
             $queryProloguePart .= " ".$resultCubeSpec['measFunctionList'][$measure].
                     "(?".$measQName.") AS ?".$measQName;
             $queryWherePart .= " ?observation <".$measPropertyUri."> ?".$measQName.".";
-            $queryOrderByPart .= ($resultCubeSpec['measOptionList'][$measure]['order'] != 'NONE' ? 
+            $queryOrderByPart .= ($resultCubeSpec['measOptionList'][$measure]['order'] != 'NONE' ?
                     $resultCubeSpec['measOptionList'][$measure]['order'].
                     '(?'.$measQName.') ' : '');
-            
+
             $titleHelper->addResource($measure);
-            
+
             $internalNameTable['m'][$measure]['index'] = $index;
             $internalNameTable['m'][$measure]['qname'] = $measQName;
             $internalNameTable['m'][$measure]['uri'] = $measure;
             $internalNameTable['m'][$measure]['type'] = $measPropertyUri;
         }
-        
+
         foreach($internalNameTable as $type => $compSpec) {
             foreach($compSpec as $uri => $elements) {
-                $internalNameTable[$type][$uri]['label'] 
-                    = $titleHelper->getTitle($elements['uri']); 
+                $internalNameTable[$type][$uri]['label']
+                    = $titleHelper->getTitle($elements['uri']);
             }
         }
-        
+
         //add group-by- and order-by-statements only if there are things to group and to sort
         $queryWherePart.="}".($queryGroupByPart != "" ? " GROUP BY ".$queryGroupByPart : "")
             .($queryOrderByPart != "" ? " ORDER BY ".$queryOrderByPart : "");
-        
+
         //create and run the query
         $queryObservations = new Erfurt_Sparql_SimpleQuery();
-        
+
         $queryObservations->setProloguePart($queryProloguePart);
         $queryObservations->setWherePart($queryWherePart);
-        
+
         $queryResultObservations = $this->_model->sparqlQuery($queryObservations);
-        
-        $result = array ('observations'=>$queryResultObservations, 
+
+        $result = array ('observations'=>$queryResultObservations,
             'nameTable'=>$internalNameTable);
 
         return $result;
-        
+
     }
-    
+
     /**
-     * Returns a layouted set of result observation data by splitting the 
+     * Returns a layouted set of result observation data by splitting the
      * dimension and measure data to seperated arrays and rounding the values if
      * set so.
      * @param array $resultObservations The query result for the observations
@@ -985,93 +975,93 @@ class CubeHelper {
      * 'measureData' => { ... => { 'qname' => 'measureValue' } }
      */
     public function layoutObservationData($resultObservations, $measOptionList) {
-        
+
         $observationsResult = $resultObservations['observations'];
         $observationsNameTable = $resultObservations['nameTable'];
-        
+
         $distinctDimensionTuples = array();
         $aggregatedMeasureData = array();
-        
+
         foreach($observationsResult as $observationSet) {
-            
+
             $temporaryDimStore = array();
             $temporaryMeasStore = array();
-            
+
             foreach($observationsNameTable['d'] as $dimUriSet) {
                 if(isset($observationSet[$dimUriSet['qname']]))
-                    $temporaryDimStore[$dimUriSet['qname']] 
+                    $temporaryDimStore[$dimUriSet['qname']]
                         = htmlentities($observationSet[$dimUriSet['qname']],
                                 ENT_QUOTES | ENT_HTML401);
             }
-            
+
             foreach($observationsNameTable['m'] as $measUriSet) {
                 if(isset($observationSet[$measUriSet['qname']])) {
                     $uri = $measUriSet['uri'];
-                    $temporaryMeasStore[$measUriSet['qname']] 
-                        = strval(isset($measOptionList[$uri]['round']) ? 
-                            round($observationSet[$measUriSet['qname']]) 
+                    $temporaryMeasStore[$measUriSet['qname']]
+                        = strval(isset($measOptionList[$uri]['round']) ?
+                            round($observationSet[$measUriSet['qname']])
                             : $observationSet[$measUriSet['qname']]);
                 }
                 else {
                     $temporaryMeasStore[$measUriSet['qname']] = '';
                 }
             }
-            
+
             //create this dimension tuple and save measures as first values
             $distinctDimensionTuples[] = $temporaryDimStore;
             $aggregatedMeasureData[] = $temporaryMeasStore;
-            
+
         }
-        
-        $result = array('dimensionData' => $distinctDimensionTuples, 
+
+        $result = array('dimensionData' => $distinctDimensionTuples,
                         'measureData' => $aggregatedMeasureData);
-        
+
         return $result;
     }
-    
+
     /**
      * Returns all elements of a dimension or measure component. If a title helper
      * is given, the resources will be added.
      * @param string $dataSet The data set which has to be used
-     * @param string $componentProperty The property uri of the component for which 
+     * @param string $componentProperty The property uri of the component for which
      * the elements should be gathered
-     * @param OntoWiki_Model_TitleHelper $titleHelper The title helper for the 
+     * @param OntoWiki_Model_TitleHelper $titleHelper The title helper for the
      * names of the elements
      * @param array $limits The limits for the gathering of elements, indicated
      * by an array with the indices 'limit' and 'offset'
-     * @return array The elements which are linked to the given component 
+     * @return array The elements which are linked to the given component
      */
     public function getComponentElements($dataSet, $componentProperty, $titleHelper = null, $limits = array()) {
-        
+
         $result = array();
         $wherePart = "";
-                
+
         $queryComponentElements = new Erfurt_Sparql_SimpleQuery();
         $queryComponentElements->setProloguePart('SELECT DISTINCT(?element)');
-        
+
         $wherePart = 'WHERE {?observation <'.$this->_uris['rdfType'].'> <'.$this->_uris['Observation'].'>.
             ?observation <'.$this->_uris['datasetrel'].'> <'.$dataSet.'>.
             ?observation <'.$componentProperty.'> ?element.} ORDER BY ASC(?element)';
-        
+
         if(count($limits)>0) {
             $wherePart .= ' LIMIT '.$limits['limit'].' OFFSET '.$limits['offset'];
         }
-        
+
         $queryComponentElements->setWherePart($wherePart);
-        
+
         $queryResultElements = $this->_model->sparqlQuery($queryComponentElements);
 
         foreach($queryResultElements as $element) {
             if(isset($element['element'])) {
                 $result[] = $element['element'];
-                if(isset($titleHelper)) 
+                if(isset($titleHelper))
                     $titleHelper->addResource($element['element']);
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Returns the element count of the number of elements linked to the given component
      * represented by its component property.
@@ -1080,64 +1070,64 @@ class CubeHelper {
      * @return int The number of elements belonging to the given property
      */
     public function getComponentElementCount($dataSet, $componentProperty) {
-        
+
         $result = 0;
-                
+
         $queryComponentElementCount = new Erfurt_Sparql_SimpleQuery();
-        $queryComponentElementCount->setProloguePart('SELECT COUNT(DISTINCT(?element)) 
+        $queryComponentElementCount->setProloguePart('SELECT COUNT(DISTINCT(?element))
             AS ?elemCount');
-        $queryComponentElementCount->setWherePart('WHERE {?observation 
+        $queryComponentElementCount->setWherePart('WHERE {?observation
             <'.$this->_uris['rdfType'].'> <'.$this->_uris['Observation'].'>.
             ?observation <'.$this->_uris['datasetrel'].'> <'.$dataSet.'>.
             ?observation <'.$componentProperty.'> ?element.}');
-        
-        $queryResultElementCount 
+
+        $queryResultElementCount
             = $this->_model->sparqlQuery($queryComponentElementCount);
 
         $countRow = current($queryResultElementCount);
         $result = (int) $countRow['elemCount'];
-        
+
         return $result;
     }
-    
+
     /**
      * Returns all available function codes and names for aggregation functions
      * that can be used in the component.
      * @return array The aggregate functions available and their name strings
-     * 'functionCode' => 'functionName' 
+     * 'functionCode' => 'functionName'
      */
     public function provideAggregationFunctions() {
-        
-        //the sparql 1.0 aggregation functions are listed here for use with 
+
+        //the sparql 1.0 aggregation functions are listed here for use with
         //the measure values
-        $aggregationFunctions = array('SUM' => 'sum', 
-                                      'AVG' => 'average', 
-                                      'MIN' => 'minimum', 
+        $aggregationFunctions = array('SUM' => 'sum',
+                                      'AVG' => 'average',
+                                      'MIN' => 'minimum',
                                       'MAX' => 'maximum');
-        
-        return $aggregationFunctions;  
+
+        return $aggregationFunctions;
     }
-    
+
     /**
      * Sets the uri patterns for the helper to use while creating uris for new
      * instances in the knowledge base.
      * @param array $uriPattern A list of the uri patterns to set:
-     * 'patternName' => 'patternContent' 
+     * 'patternName' => 'patternContent'
      */
     public function setUriPattern($uriPattern) {
         $this->_uriPattern = $uriPattern;
     }
-    
+
     /**
      * Returns all enabled uri elements which can be used in uri patterns for
      * new instances.
      * @return array The list of enabled uri elements for uri patterns:
-     * 'elementName' => boolean 
+     * 'elementName' => boolean
      */
     public function provideUriElementDescriptions() {
-        
+
         $result = array();
-        
+
         if(isset($this->_uriElements['MODEL']))
                 $result['MODEL'] = true;
         if(isset($this->_uriElements['MD5']))
@@ -1146,19 +1136,19 @@ class CubeHelper {
                 $result['COUNTER'] = true;
         return $result;
     }
-    
+
     /**
      * Returns an uri for a new instance of a cube element.
      * @param string $identifier The uri of an associated instance that can be
      * used to create a unique hash, i.e. the dimension property for component
      * specifications
-     * @param string $type The type of the associated instance for which the 
+     * @param string $type The type of the associated instance for which the
      * uri has to be created, can be 'dp' for dimension property, 'mp' for measure
      * property, 'ds' for data set, 'dsd' for data structure definition
-     * @return string The created uri string 
+     * @return string The created uri string
      */
     private function _createURI($identifier, $type) {
-        
+
         $time = time();
         $result = '';
         $md5 = '';
@@ -1171,7 +1161,7 @@ class CubeHelper {
                 if(isset($this->_uriElements['MD5'])) {
                     $md5 = md5($identifier.'dimension'.$time);
                     $result = str_replace('<MD5>', $md5, $result);
-                }   
+                }
                 break;
             case 'mp':
                 $result = $this->_uriPattern['ComponentSpecification'];
@@ -1208,9 +1198,9 @@ class CubeHelper {
                 $this->_uriCounter++;
             }
         }
-        
+
         return $result;
     }
-    
+
 }
 ?>
